@@ -1,0 +1,1624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dewan Plastic work — Stock In / Out Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
+  --primary-light: #e0f2fe;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --green: #10b981;
+  --green-bg: #ecfdf5;
+  --green-border: #a7f3d0;
+  --red: #f43f5e;
+  --red-bg: #fff1f2;
+  --red-border: #fecdd3;
+  --amber: #f59e0b;
+  --amber-bg: #fffbeb;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header Navbar */
+.top-nav {
+  background: #0f172a;
+  color: #fff;
+  padding: 16px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-icon {
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 20px;
+  color: #fff;
+}
+.brand-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #f8fafc;
+}
+.brand-text p {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Container */
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-success { background: #10b981; color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-danger { background: #f43f5e; color: #fff; }
+.btn-danger:hover { background: #e11d48; }
+.btn-outline { background: #fff; border-color: var(--border); color: var(--text); }
+.btn-outline:hover { background: #f1f5f9; }
+.btn-sm { padding: 6px 11px; font-size: 12px; border-radius: 6px; }
+
+/* Stat Summary Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--card);
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.stat-info .stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.stat-info .stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  margin-top: 4px;
+}
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.icon-blue { background: #e0f2fe; color: #0284c7; }
+.icon-green { background: #dcfce7; color: #16a34a; }
+.icon-orange { background: #ffedd5; color: #ea580c; }
+.icon-purple { background: #f3e8ff; color: #9333ea; }
+
+/* Tabs Bar */
+.tabs-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+.tab-btn {
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Toolbar & Filters */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+  min-width: 260px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+.search-input:focus { border-color: var(--primary); }
+.select-input {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  min-width: 150px;
+}
+.date-input {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+
+/* Pill buttons for Period Selection */
+.period-pills {
+  display: flex;
+  gap: 6px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.pill-btn {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pill-btn:hover { color: var(--text); }
+.pill-btn.active {
+  background: #fff;
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Table */
+.card-table {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.table-responsive {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+th {
+  background: #f8fafc;
+  padding: 12px 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+
+.sku-badge {
+  font-size: 11px;
+  font-family: monospace;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #475569;
+  font-weight: 600;
+}
+.prod-title {
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+}
+.prod-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.stock-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-size { background: #e2e8f0; color: #334155; }
+.badge-color { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
+
+.badge-ok { background: var(--green-bg); color: #065f46; border: 1px solid var(--green-border); }
+.badge-low { background: var(--red-bg); color: #9f1239; border: 1px solid var(--red-border); }
+.badge-in { background: var(--green-bg); color: #047857; }
+.badge-out { background: var(--amber-bg); color: #b45309; }
+
+/* Quick Action Stock Buttons on Row */
+.row-actions {
+  display: flex;
+  gap: 6px;
+}
+.btn-in {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+.btn-in:hover { background: #bbf7d0; }
+.btn-out {
+  background: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+.btn-out:hover { background: #fde68a; }
+
+/* Modal Popup */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform: translateY(15px);
+  transition: transform 0.2s ease;
+}
+.modal-overlay.open .modal {
+  transform: translateY(0);
+}
+.modal-header {
+  padding: 18px 24px;
+  background: #0f172a;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover { color: #fff; }
+.modal-body {
+  padding: 24px;
+}
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.form-control {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+}
+.form-control:focus { border-color: var(--primary); }
+
+/* Login Screen */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #0f172a, #075985);
+}
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.login-brand { text-align: center; margin-bottom: 24px; }
+.login-brand .brand-icon { margin: 0 auto 12px; }
+.login-brand h2 { font-size: 22px; color: var(--text); }
+.login-brand p { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+.login-error { min-height: 20px; color: #be123c; font-size: 12px; margin: 8px 0 0; }
+.login-hint { color: var(--text-muted); font-size: 11px; text-align: center; margin-top: 14px; }
+
+.quick-bags {
+  background: #f0f9ff;
+  border: 1px dashed #0284c7;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.quick-bags-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0369a1;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.bag-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.bag-btn {
+  background: #fff;
+  border: 1px solid #bae6fd;
+  color: #0284c7;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bag-btn:hover {
+  background: #0284c7;
+  color: #fff;
+}
+
+/* Toast alert */
+#toast-box {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 300;
+}
+.toast {
+  background: #0f172a;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media(max-width: 768px) {
+  .top-nav { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+  .header-actions { width: 100%; flex-wrap: wrap; }
+  .header-actions .btn { flex: 1; justify-content: center; }
+  .container { padding: 16px 12px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Local login gate. Use Supabase Auth for production security. -->
+<div class="login-screen" id="login-screen">
+  <form class="login-card" id="login-form">
+    <div class="login-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Dewan Plast Inventory</h2>
+      <p>Sign in to manage stock and reports</p>
+    </div>
+    <div class="form-group">
+      <label for="login-username">Email</label>
+      <input class="form-control" id="login-username" type="email" autocomplete="username" placeholder="you@example.com" required>
+    </div>
+    <div class="form-group">
+      <label for="login-password">Password</label>
+      <input class="form-control" id="login-password" type="password" autocomplete="current-password" required>
+    </div>
+    <p class="login-error" id="login-error" role="alert"></p>
+    <button class="btn btn-primary" style="width:100%; justify-content:center;" type="submit">🔐 Login</button>
+    <p class="login-hint">Use your Supabase account email and password.</p>
+  </form>
+</div>
+
+<!-- Header -->
+<header class="top-nav">
+  <div class="brand">
+    <div class="brand-icon">📦</div>
+    <div class="brand-text">
+      <h1>Dewan Plast Inventory</h1>
+      <p>Stock IN / OUT & Time Period Reports</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-success" onclick="openStockModal('IN')">📥 + Stock IN</button>
+    <button class="btn btn-danger" onclick="openStockModal('OUT')">📤 - Stock OUT</button>
+    <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="openProductModal()">➕ New Item</button>
+    <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="downloadExcel()">📊 Download Excel</button>
+    <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="downloadJSON()">💾 Backup</button>
+    <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="logout()">🚪 Logout</button>
+  </div>
+</header>
+
+<main class="container">
+  <!-- Summary Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-info">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value" id="stat-total-items">0</div>
+      </div>
+      <div class="stat-icon icon-blue">📦</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-info">
+        <div class="stat-label">Current Stock (Bags)</div>
+        <div class="stat-value" id="stat-total-stock">0</div>
+      </div>
+      <div class="stat-icon icon-purple">🏭</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-info">
+        <div class="stat-label">Stock Received (IN)</div>
+        <div class="stat-value" id="stat-total-in" style="color:#10b981;">0</div>
+      </div>
+      <div class="stat-icon icon-green">📥</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-info">
+        <div class="stat-label">Stock Dispatched (OUT)</div>
+        <div class="stat-value" id="stat-total-out" style="color:#f43f5e;">0</div>
+      </div>
+      <div class="stat-icon icon-orange">📤</div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs-bar">
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-inventory-btn" onclick="switchTab('inventory')">📋 Live Inventory List </button>
+      <button class="tab-btn" id="tab-history-btn" onclick="switchTab('history')">📜 Stock Movement History</button>
+      <button class="tab-btn" id="tab-period-btn" onclick="switchTab('period')">📊 Weekly / Monthly / Yearly Reports</button>
+    </div>
+  </div>
+
+  <!-- TAB 1: INVENTORY LIST -->
+  <section id="view-inventory">
+    <div class="toolbar">
+      <input type="text" id="search-input" class="search-input" placeholder="🔍 Search product name, SKU, size (e.g. 83 mm), or color (e.g. Red, Blue)..." oninput="renderInventory()">
+      <select id="category-filter" class="select-input" onchange="renderInventory()">
+        <option value="">All Categories</option>
+      </select>
+      <select id="color-filter" class="select-input" onchange="renderInventory()">
+        <option value="">All Colors</option>
+      </select>
+      <select id="stock-filter" class="select-input" onchange="renderInventory()">
+        <option value="">All Stock Levels</option>
+        <option value="low">Low Stock Items</option>
+        <option value="ok">Normal Stock Items</option>
+      </select>
+    </div>
+
+    <div class="card-table">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU & Item Name</th>
+              <th>Category</th>
+              <th>Size</th>
+              <th>Color</th>
+              <th>Unit / Packing</th>
+              <th>Current Stock</th>
+              <th>Status</th>
+              <th style="text-align: right;">Fast Stock Entry</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: TRANSACTION HISTORY -->
+  <section id="view-history" style="display: none;">
+    <div class="toolbar">
+      <input type="text" id="history-search" class="search-input" placeholder="🔍 Search history by product or reference..." oninput="renderHistory()">
+      <select id="history-type-filter" class="select-input" onchange="renderHistory()">
+        <option value="">All Types (IN & OUT)</option>
+        <option value="IN">Stock IN Only</option>
+        <option value="OUT">Stock OUT Only</option>
+      </select>
+    </div>
+
+    <div class="card-table">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Product Details</th>
+              <th>Type</th>
+              <th>Quantity</th>
+              <th>Reference / Invoice</th>
+              <th>Remarks / Note</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: PERIOD REPORTS (WEEKLY / MONTHLY / YEARLY) -->
+  <section id="view-period" style="display: none;">
+    <div class="toolbar">
+      <div class="period-pills">
+        <button class="pill-btn" id="period-btn-week" onclick="setPeriod('week')">📅 This Week (Is Hafe)</button>
+        <button class="pill-btn active" id="period-btn-month" onclick="setPeriod('month')">📅 This Month (Is Mahine)</button>
+        <button class="pill-btn" id="period-btn-year" onclick="setPeriod('year')">📅 This Year (Is Saal)</button>
+        <button class="pill-btn" id="period-btn-all" onclick="setPeriod('all')">📅 All Time</button>
+        <button class="pill-btn" id="period-btn-custom" onclick="setPeriod('custom')">⚙️ Custom Dates</button>
+      </div>
+
+      <div id="custom-date-box" style="display:none; gap:8px; align-items:center;">
+        <span style="font-size:12px; font-weight:600;">From:</span>
+        <input type="date" id="start-date" class="date-input" onchange="renderPeriodReport()">
+        <span style="font-size:12px; font-weight:600;">To:</span>
+        <input type="date" id="end-date" class="date-input" onchange="renderPeriodReport()">
+      </div>
+
+      <button class="btn btn-success" style="margin-left:auto;" onclick="downloadPeriodExcel()">📊 Download Period Excel Report (.xls)</button>
+    </div>
+
+    <!-- Period KPI Summary Cards -->
+    <div class="stats-grid" style="margin-bottom: 20px;">
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Period Stock IN (Received)</div>
+          <div class="stat-value" id="period-stat-in" style="color:#10b981;">0</div>
+        </div>
+        <div class="stat-icon icon-green">📥</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Period Stock OUT (Dispatched)</div>
+          <div class="stat-value" id="period-stat-out" style="color:#f43f5e;">0</div>
+        </div>
+        <div class="stat-icon icon-orange">📤</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Net Movement (+ / -)</div>
+          <div class="stat-value" id="period-stat-net" style="color:#0284c7;">0</div>
+        </div>
+        <div class="stat-icon icon-blue">📊</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Total Transactions</div>
+          <div class="stat-value" id="period-stat-count">0</div>
+        </div>
+        <div class="stat-icon icon-purple">📑</div>
+      </div>
+    </div>
+
+    <!-- Period Product-Wise Breakdown Table -->
+    <div class="card-table">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU & Item Name</th>
+              <th>Category</th>
+              <th>Size</th>
+              <th>Color</th>
+              <th>Stock IN (Received)</th>
+              <th>Stock OUT (Dispatched)</th>
+              <th>Net Change in Period</th>
+              <th>Current Total Stock</th>
+            </tr>
+          </thead>
+          <tbody id="period-tbody">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- STOCK IN / OUT MODAL -->
+<div class="modal-overlay" id="stock-modal">
+  <div class="modal">
+    <div class="modal-header" id="stock-modal-header">
+      <h3 id="stock-modal-title">Record Stock Movement</h3>
+      <button class="modal-close" onclick="closeStockModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="stock-form" onsubmit="saveStockMovement(event)">
+        <input type="hidden" id="sm-type" value="IN">
+        
+        <div class="form-group">
+          <label>Select Product (Size & Color)</label>
+          <select id="sm-product" class="form-control" required></select>
+        </div>
+
+        <!-- Quick 500 Refill Bag Calculator -->
+        <div class="quick-bags">
+          <div class="quick-bags-title">
+            <span>📦 QUICK BAG CALCULATOR (500 Pcs / Bag)</span>
+            <span id="quick-calc-result" style="color:#0284c7; font-weight:800;">= 0 Pcs</span>
+          </div>
+          <div class="bag-btns">
+            <button type="button" class="bag-btn" onclick="applyQuickBags(1)">+1 Bag (500)</button>
+            <button type="button" class="bag-btn" onclick="applyQuickBags(5)">+5 Bags (2.5k)</button>
+            <button type="button" class="bag-btn" onclick="applyQuickBags(10)">+10 Bags (5k)</button>
+            <button type="button" class="bag-btn" onclick="applyQuickBags(20)">+20 Bags (10k)</button>
+            <button type="button" class="bag-btn" onclick="applyQuickBags(50)">+50 Bags (25k)</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Quantity (Bags / Pcs)</label>
+          <input type="number" id="sm-qty" class="form-control" placeholder="Enter quantity" min="1" required>
+        </div>
+
+        <div class="form-group">
+          <label>Reference / Invoice / Bill No.</label>
+          <input type="text" id="sm-ref" class="form-control" placeholder="e.g. PO-1024 or Dispatch Bill #42">
+        </div>
+
+        <div class="form-group">
+          <label>Remarks / Note (Optional)</label>
+          <input type="text" id="sm-note" class="form-control" placeholder="e.g. Received from factory / Sent to Client">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+          <button type="button" class="btn btn-outline" onclick="closeStockModal()">Cancel</button>
+          <button type="submit" id="sm-submit-btn" class="btn btn-success">Save Stock Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT ADD / EDIT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="product-modal-title">Add New Item</h3>
+      <button class="modal-close" onclick="closeProductModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="product-form" onsubmit="saveProduct(event)">
+        <input type="hidden" id="pm-old-sku" value="">
+
+        <div class="form-group">
+          <label>SKU Code</label>
+          <input type="text" id="pm-sku" class="form-control" placeholder="e.g. DP-001-A" required>
+        </div>
+
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="pm-name" class="form-control" placeholder="e.g. PP CAPS - FOOD" required>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Category</label>
+            <input type="text" id="pm-cat" class="form-control" placeholder="e.g. Food, Oil, Water Jar" required>
+          </div>
+          <div class="form-group">
+            <label>Size</label>
+            <input type="text" id="pm-size" class="form-control" placeholder="e.g. 83 mm">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Color</label>
+            <input type="text" id="pm-color" class="form-control" placeholder="e.g. Red, Blue, Multi-color">
+          </div>
+          <div class="form-group">
+            <label>Use / Application</label>
+            <input type="text" id="pm-usage" class="form-control" placeholder="e.g. Edible oil packing">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Packing Unit</label>
+            <input type="text" id="pm-unit" class="form-control" value="BAG (500 Refill)">
+          </div>
+          <div class="form-group">
+            <label>Reorder Alert Level</label>
+            <input type="number" id="pm-reorder" class="form-control" value="500">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Opening Stock</label>
+          <input type="number" id="pm-stock" class="form-control" value="0">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+          <button type="button" class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width: 440px;">
+    <div class="modal-header" style="background: #9f1239;">
+      <h3>🗑️ Delete Product Item</h3>
+      <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px; color:#334155; margin-bottom:12px;">
+        Are you sure you want to delete this product item?
+      </p>
+      <div style="background:#fff1f2; border:1px solid #fecdd3; padding:12px; border-radius:10px; margin-bottom:20px;">
+        <span class="sku-badge" id="delete-modal-sku">DP-001-A</span>
+        <strong id="delete-modal-name" style="display:block; margin-top:4px; font-size:15px; color:#9f1239;">Product Name</strong>
+        <span id="delete-modal-sub" style="font-size:12px; color:#64748b;">Size / Color</span>
+      </div>
+      <p style="font-size:12px; color:#94a3b8;">
+        ⚠️ This will remove the item from the inventory list and all period reports.
+      </p>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="confirmDeleteProduct()">Yes, Delete Item</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Box Container -->
+<div id="toast-box"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// --- SEED DATA WITH FULL SIZE & COLOR CATALOGUE ---
+const seedProducts = [
+ ];
+
+const seedMoves = [
+  ];
+
+const STORAGE_PROD_KEY = "dewan_plast_inventory_v1";
+const STORAGE_MOVE_KEY = "dewan_plast_movements_v1";
+const SUPABASE_URL = "https://dxeuadvplcussiwraaia.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zIpi9znY-X4lwJlmiG992Q_e3k_5_62";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+function loadData(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (key === STORAGE_PROD_KEY && Array.isArray(parsed)) {
+      return parsed.map(p => {
+        const seedMatch = seedProducts.find(s => s.sku === p.sku);
+        return { ...p, color: p.color || (seedMatch ? seedMatch.color : "Default") };
+      });
+    }
+    return parsed;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+async function saveData() {
+  try {
+    localStorage.setItem(STORAGE_PROD_KEY, JSON.stringify(products));
+    localStorage.setItem(STORAGE_MOVE_KEY, JSON.stringify(movements));
+  } catch (e) {}
+  await syncCloudData();
+}
+
+let products = loadData(STORAGE_PROD_KEY, seedProducts);
+let movements = loadData(STORAGE_MOVE_KEY, seedMoves);
+let selectedPeriod = 'month';
+let pendingDeleteSku = null;
+
+async function getCurrentUser() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  return user;
+}
+
+async function syncCloudData() {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const cloudProducts = products.map(product => ({
+    user_id: user.id,
+    sku: product.sku,
+    name: product.name,
+    category: product.category || '',
+    size: product.size || null,
+    color: product.color || null,
+    usage: product.usage || null,
+    unit: product.unit || null,
+    reorder: Number(product.reorder || 500),
+    stock: Number(product.stock || 0)
+  }));
+  const { error: productsError } = await supabaseClient.from('products').upsert(cloudProducts, { onConflict: 'user_id,sku' });
+  if (productsError) {
+    console.warn('Supabase products sync failed. Run supabase-schema.sql first.', productsError.message);
+    return;
+  }
+
+  const { data: existingProducts } = await supabaseClient.from('products').select('id, sku').eq('user_id', user.id);
+  const staleIds = (existingProducts || []).filter(row => !products.some(product => product.sku === row.sku)).map(row => row.id);
+  if (staleIds.length) await supabaseClient.from('products').delete().in('id', staleIds);
+
+  await supabaseClient.from('stock_movements').delete().eq('user_id', user.id);
+  if (movements.length) {
+    const cloudMovements = movements.map(movement => ({ user_id: user.id, product: movement.product, type: movement.type, qty: Number(movement.qty || 0), ref: movement.ref || null, date: movement.date, note: movement.note || null }));
+    const { error: movementsError } = await supabaseClient.from('stock_movements').insert(cloudMovements);
+    if (movementsError) console.warn('Supabase movements sync failed. Run supabase-schema.sql first.', movementsError.message);
+  }
+}
+
+async function loadCloudData() {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const { data: cloudProducts, error: productsError } = await supabaseClient.from('products').select('*').eq('user_id', user.id).order('id');
+  const { data: cloudMovements, error: movementsError } = await supabaseClient.from('stock_movements').select('*').eq('user_id', user.id).order('id');
+  if (productsError || movementsError) {
+    console.warn('Supabase data load failed. Run supabase-schema.sql first.');
+    return;
+  }
+
+  if (cloudProducts.length || cloudMovements.length || (!products.length && !movements.length)) {
+    products = cloudProducts.map(product => ({ sku: product.sku, name: product.name, category: product.category, size: product.size, color: product.color, usage: product.usage, unit: product.unit, reorder: product.reorder, stock: product.stock }));
+    movements = cloudMovements.map(movement => ({ product: movement.product, type: movement.type, qty: movement.qty, ref: movement.ref || '', date: movement.date, note: movement.note || '' }));
+    saveData();
+  } else {
+    await syncCloudData();
+  }
+}
+
+async function setLoginVisibility() {
+  const { data: { session }, error } = await supabaseClient.auth.getSession();
+  if (error) console.error("Supabase session error:", error.message);
+  document.getElementById("login-screen").style.display = session ? "none" : "flex";
+  return session;
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById("login-username").value.trim();
+  const password = document.getElementById("login-password").value;
+  const error = document.getElementById("login-error");
+  error.textContent = "Signing in...";
+
+  const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (!loginError) {
+    error.textContent = "";
+    document.getElementById("login-form").reset();
+    setLoginVisibility();
+    return;
+  }
+
+  console.error("Supabase login error:", loginError);
+  if (loginError.message === "Invalid login credentials") {
+    error.textContent = "Email ya password galat hai, ya user Supabase me create nahi hai.";
+  } else if (loginError.message.toLowerCase().includes("email not confirmed")) {
+    error.textContent = "Supabase email confirmation complete karein, phir login karein.";
+  } else {
+    error.textContent = loginError.message || "Login nahi ho saka.";
+  }
+}
+
+async function logout() {
+  await supabaseClient.auth.signOut();
+  setLoginVisibility();
+}
+
+// --- APP INITIALIZATION ---
+async function init() {
+  const session = await setLoginVisibility();
+  if (session) await loadCloudData();
+  populateFilters();
+  updateStats();
+  renderInventory();
+  renderHistory();
+  renderPeriodReport();
+}
+
+function fmt(n) {
+  return Number(n || 0).toLocaleString('en-IN');
+}
+
+function toast(msg) {
+  const box = document.getElementById("toast-box");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `<span>✅ ${msg}</span>`;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// --- TABS & NAVIGATION ---
+function switchTab(tab) {
+  document.getElementById("view-inventory").style.display = tab === 'inventory' ? 'block' : 'none';
+  document.getElementById("view-history").style.display = tab === 'history' ? 'block' : 'none';
+  document.getElementById("view-period").style.display = tab === 'period' ? 'block' : 'none';
+  
+  document.getElementById("tab-inventory-btn").classList.toggle("active", tab === 'inventory');
+  document.getElementById("tab-history-btn").classList.toggle("active", tab === 'history');
+  document.getElementById("tab-period-btn").classList.toggle("active", tab === 'period');
+
+  if (tab === 'period') renderPeriodReport();
+}
+
+// --- POPULATE FILTERS ---
+function populateFilters() {
+  const cats = [...new Set(products.map(p => p.category))].sort();
+  const catSelect = document.getElementById("category-filter");
+  catSelect.innerHTML = '<option value="">All Categories</option>' + 
+    cats.map(c => `<option value="${c}">${c}</option>`).join("");
+
+  const colors = [...new Set(products.map(p => p.color).filter(Boolean))].sort();
+  const colorSelect = document.getElementById("color-filter");
+  colorSelect.innerHTML = '<option value="">All Colors</option>' + 
+    colors.map(c => `<option value="${c}">${c}</option>`).join("");
+}
+
+// --- STATS UPDATE ---
+function updateStats() {
+  const totalItems = products.length;
+  const totalStock = products.reduce((sum, p) => sum + Number(p.stock || 0), 0);
+  const totalIn = movements.filter(m => m.type === 'IN').reduce((sum, m) => sum + Number(m.qty || 0), 0);
+  const totalOut = movements.filter(m => m.type === 'OUT').reduce((sum, m) => sum + Number(m.qty || 0), 0);
+
+  document.getElementById("stat-total-items").innerText = fmt(totalItems);
+  document.getElementById("stat-total-stock").innerText = fmt(totalStock);
+  document.getElementById("stat-total-in").innerText = fmt(totalIn);
+  document.getElementById("stat-total-out").innerText = fmt(totalOut);
+}
+
+// --- RENDER INVENTORY TABLE ---
+function renderInventory() {
+  const q = document.getElementById("search-input").value.toLowerCase().trim();
+  const cat = document.getElementById("category-filter").value;
+  const colFilter = document.getElementById("color-filter").value;
+  const stockFilter = document.getElementById("stock-filter").value;
+
+  const filtered = products.filter(p => {
+    const matchesSearch = !q || [p.sku, p.name, p.category, p.size, p.color, p.usage].join(" ").toLowerCase().includes(q);
+    const matchesCat = !cat || p.category === cat;
+    const matchesColor = !colFilter || p.color === colFilter;
+    const isLow = Number(p.stock) <= Number(p.reorder || 500);
+    const matchesStock = !stockFilter || (stockFilter === 'low' ? isLow : !isLow);
+    return matchesSearch && matchesCat && matchesColor && matchesStock;
+  });
+
+  const tbody = document.getElementById("inventory-tbody");
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">No matching items found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(p => {
+    const isLow = Number(p.stock) <= Number(p.reorder || 500);
+    return `
+      <tr>
+        <td>
+          <span class="sku-badge">${p.sku}</span>
+          <span class="prod-title">${p.name}</span>
+          ${p.usage ? `<span class="prod-sub">Use: ${p.usage}</span>` : ''}
+        </td>
+        <td><b>${p.category}</b></td>
+        <td><span class="badge badge-size">${p.size || '—'}</span></td>
+        <td><span class="badge badge-color">🎨 ${p.color || 'Standard'}</span></td>
+        <td style="color:#64748b; font-size:12px;">${p.unit || 'BAG'}</td>
+        <td>
+          <span class="stock-val">${fmt(p.stock)}</span>
+        </td>
+        <td>
+          <span class="badge ${isLow ? 'badge-low' : 'badge-ok'}">
+            ${isLow ? '⚠️ LOW STOCK' : 'OK'}
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <div class="row-actions" style="justify-content: flex-end;">
+            <button class="btn btn-sm btn-in" onclick="openStockModal('IN', '${p.sku}')">📥 + IN</button>
+            <button class="btn btn-sm btn-out" onclick="openStockModal('OUT', '${p.sku}')">📤 - OUT</button>
+            <button class="btn btn-sm btn-outline" onclick="openProductModal('${p.sku}')">✏️</button>
+            <button class="btn btn-sm btn-outline" style="color:#f43f5e;" onclick="promptDeleteProduct('${p.sku}')">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// --- RENDER HISTORY TABLE ---
+function renderHistory() {
+  const q = document.getElementById("history-search").value.toLowerCase().trim();
+  const typeFilter = document.getElementById("history-type-filter").value;
+
+  const filtered = movements.filter(m => {
+    const matchesSearch = !q || [m.product, m.ref, m.note].join(" ").toLowerCase().includes(q);
+    const matchesType = !typeFilter || m.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  const tbody = document.getElementById("history-tbody");
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No stock movement records found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.slice().reverse().map(m => {
+    const p = products.find(x => x.sku === m.product);
+    const prodDetails = p ? `${p.name} (Size: ${p.size}, Color: ${p.color})` : m.product;
+    return `
+      <tr>
+        <td style="color:#64748b; font-size:12px;">${m.date}</td>
+        <td>
+          <span class="sku-badge">${m.product}</span>
+          <span style="font-weight:700; margin-left:4px;">${prodDetails}</span>
+        </td>
+        <td>
+          <span class="badge ${m.type === 'IN' ? 'badge-in' : 'badge-out'}">
+            ${m.type === 'IN' ? '📥 STOCK IN' : '📤 STOCK OUT'}
+          </span>
+        </td>
+        <td><b style="font-size:14px;">${fmt(m.qty)}</b></td>
+        <td>${m.ref || '—'}</td>
+        <td style="color:#64748b;">${m.note || '—'}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// --- PERIOD REPORTING LOGIC (WEEKLY / MONTHLY / YEARLY) ---
+function setPeriod(p) {
+  selectedPeriod = p;
+  document.querySelectorAll('.period-pills .pill-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(`period-btn-${p}`).classList.add('active');
+  
+  document.getElementById('custom-date-box').style.display = p === 'custom' ? 'flex' : 'none';
+  renderPeriodReport();
+}
+
+function filterMovesByPeriod(moves, period) {
+  const now = new Date();
+  const startDateVal = document.getElementById("start-date")?.value;
+  const endDateVal = document.getElementById("end-date")?.value;
+
+  return moves.filter(m => {
+    if (!m.date) return false;
+    const d = new Date(m.date.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return true;
+
+    if (period === 'week') {
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return d >= oneWeekAgo && d <= now;
+    }
+    if (period === 'month') {
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }
+    if (period === 'year') {
+      return d.getFullYear() === now.getFullYear();
+    }
+    if (period === 'custom') {
+      const start = startDateVal ? new Date(startDateVal + 'T00:00:00') : new Date(0);
+      const end = endDateVal ? new Date(endDateVal + 'T23:59:59') : new Date();
+      return d >= start && d <= end;
+    }
+    return true; // 'all'
+  });
+}
+
+function renderPeriodReport() {
+  const periodMoves = filterMovesByPeriod(movements, selectedPeriod);
+  
+  const totalIn = periodMoves.filter(m => m.type === 'IN').reduce((sum, m) => sum + Number(m.qty || 0), 0);
+  const totalOut = periodMoves.filter(m => m.type === 'OUT').reduce((sum, m) => sum + Number(m.qty || 0), 0);
+  const netChange = totalIn - totalOut;
+
+  document.getElementById("period-stat-in").innerText = fmt(totalIn);
+  document.getElementById("period-stat-out").innerText = fmt(totalOut);
+  document.getElementById("period-stat-net").innerText = (netChange >= 0 ? '+' : '') + fmt(netChange);
+  document.getElementById("period-stat-count").innerText = fmt(periodMoves.length);
+
+  // Group by product for period summary
+  const prodSummary = {};
+  products.forEach(p => {
+    prodSummary[p.sku] = { sku: p.sku, name: p.name, category: p.category, size: p.size, color: p.color, stock: p.stock, inQty: 0, outQty: 0 };
+  });
+
+  periodMoves.forEach(m => {
+    if (prodSummary[m.product]) {
+      if (m.type === 'IN') prodSummary[m.product].inQty += Number(m.qty || 0);
+      if (m.type === 'OUT') prodSummary[m.product].outQty += Number(m.qty || 0);
+    }
+  });
+
+  const tbody = document.getElementById("period-tbody");
+  const rows = Object.values(prodSummary);
+
+  tbody.innerHTML = rows.map(r => {
+    const net = r.inQty - r.outQty;
+    return `
+      <tr>
+        <td>
+          <span class="sku-badge">${r.sku}</span>
+          <span class="prod-title">${r.name}</span>
+        </td>
+        <td><b>${r.category}</b></td>
+        <td><span class="badge badge-size">${r.size || '—'}</span></td>
+        <td><span class="badge badge-color">🎨 ${r.color || 'Standard'}</span></td>
+        <td style="color:#10b981; font-weight:700;">+${fmt(r.inQty)}</td>
+        <td style="color:#f43f5e; font-weight:700;">-${fmt(r.outQty)}</td>
+        <td>
+          <span class="badge ${net > 0 ? 'badge-in' : (net < 0 ? 'badge-out' : 'badge-size')}">
+            ${net >= 0 ? '+' : ''}${fmt(net)}
+          </span>
+        </td>
+        <td><b style="font-size:14px;">${fmt(r.stock)}</b></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// --- STOCK IN / OUT MODAL LOGIC ---
+function openStockModal(type, preselectSku = '') {
+  document.getElementById("sm-type").value = type;
+  const isIN = type === 'IN';
+  
+  const title = document.getElementById("stock-modal-title");
+  const header = document.getElementById("stock-modal-header");
+  const submitBtn = document.getElementById("sm-submit-btn");
+
+  if (isIN) {
+    title.innerText = "📥 Record Stock IN (Maal Aaya)";
+    header.style.background = "#065f46";
+    submitBtn.className = "btn btn-success";
+    submitBtn.innerText = "Save Stock IN";
+  } else {
+    title.innerText = "📤 Record Stock OUT (Maal Bheja)";
+    header.style.background = "#9f1239";
+    submitBtn.className = "btn btn-danger";
+    submitBtn.innerText = "Save Stock OUT";
+  }
+
+  const prodSelect = document.getElementById("sm-product");
+  prodSelect.innerHTML = products.map(p => `
+    <option value="${p.sku}" ${p.sku === preselectSku ? 'selected' : ''}>
+      ${p.sku} — ${p.name} [Size: ${p.size || 'N/A'}, Color: ${p.color || 'Standard'}] — Stock: ${fmt(p.stock)} ${p.unit || 'BAG'}
+    </option>
+  `).join("");
+
+  document.getElementById("sm-qty").value = "";
+  document.getElementById("sm-ref").value = "";
+  document.getElementById("sm-note").value = "";
+  document.getElementById("quick-calc-result").innerText = "= 0 Pcs";
+
+  document.getElementById("stock-modal").classList.add("open");
+}
+
+function closeStockModal() {
+  document.getElementById("stock-modal").classList.remove("open");
+}
+
+function applyQuickBags(bags) {
+  const totalPcs = bags * 500;
+  document.getElementById("sm-qty").value = totalPcs;
+  document.getElementById("quick-calc-result").innerText = `= ${fmt(totalPcs)} Pcs (${bags} Bags)`;
+}
+
+function saveStockMovement(e) {
+  e.preventDefault();
+  const type = document.getElementById("sm-type").value;
+  const sku = document.getElementById("sm-product").value;
+  const qty = Number(document.getElementById("sm-qty").value);
+  const ref = document.getElementById("sm-ref").value.trim();
+  const note = document.getElementById("sm-note").value.trim();
+
+  const prod = products.find(p => p.sku === sku);
+  if (!prod) return;
+
+  if (type === 'OUT' && qty > prod.stock) {
+    alert(`Cannot dispatch ${fmt(qty)} Pcs! Current stock available is only ${fmt(prod.stock)} Pcs.`);
+    return;
+  }
+
+  if (type === 'IN') {
+    prod.stock += qty;
+  } else {
+    prod.stock -= qty;
+  }
+
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0,10) + " " + now.toTimeString().slice(0,5);
+
+  movements.push({
+    product: sku,
+    type: type,
+    qty: qty,
+    ref: ref,
+    date: dateStr,
+    note: note
+  });
+
+  saveData();
+  updateStats();
+  renderInventory();
+  renderHistory();
+  renderPeriodReport();
+  closeStockModal();
+  toast(`Stock ${type} of ${fmt(qty)} recorded for ${sku}`);
+}
+
+// --- PRODUCT ADD / EDIT MODAL LOGIC ---
+function openProductModal(skuToEdit = null) {
+  const oldSkuInp = document.getElementById("pm-old-sku");
+  const skuInp = document.getElementById("pm-sku");
+  const nameInp = document.getElementById("pm-name");
+  const catInp = document.getElementById("pm-cat");
+  const sizeInp = document.getElementById("pm-size");
+  const colorInp = document.getElementById("pm-color");
+  const usageInp = document.getElementById("pm-usage");
+  const unitInp = document.getElementById("pm-unit");
+  const reorderInp = document.getElementById("pm-reorder");
+  const stockInp = document.getElementById("pm-stock");
+
+  if (skuToEdit) {
+    const p = products.find(x => x.sku === skuToEdit);
+    if (!p) return;
+    document.getElementById("product-modal-title").innerText = "Edit Product Item";
+    oldSkuInp.value = p.sku;
+    skuInp.value = p.sku;
+    nameInp.value = p.name;
+    catInp.value = p.category;
+    sizeInp.value = p.size || "";
+    colorInp.value = p.color || "";
+    usageInp.value = p.usage || "";
+    unitInp.value = p.unit || "BAG (500 Refill)";
+    reorderInp.value = p.reorder || 500;
+    stockInp.value = p.stock || 0;
+  } else {
+    document.getElementById("product-modal-title").innerText = "Add New Item";
+    oldSkuInp.value = "";
+    skuInp.value = "";
+    nameInp.value = "";
+    catInp.value = "";
+    sizeInp.value = "";
+    colorInp.value = "";
+    usageInp.value = "";
+    unitInp.value = "BAG (500 Refill)";
+    reorderInp.value = 500;
+    stockInp.value = 0;
+  }
+
+  document.getElementById("product-modal").classList.add("open");
+}
+
+function closeProductModal() {
+  document.getElementById("product-modal").classList.remove("open");
+}
+
+function saveProduct(e) {
+  e.preventDefault();
+  const oldSku = document.getElementById("pm-old-sku").value;
+  const sku = document.getElementById("pm-sku").value.trim();
+  const name = document.getElementById("pm-name").value.trim();
+  const cat = document.getElementById("pm-cat").value.trim();
+  const size = document.getElementById("pm-size").value.trim();
+  const color = document.getElementById("pm-color").value.trim();
+  const usage = document.getElementById("pm-usage").value.trim();
+  const unit = document.getElementById("pm-unit").value.trim();
+  const reorder = Number(document.getElementById("pm-reorder").value || 500);
+  const stock = Number(document.getElementById("pm-stock").value || 0);
+
+  if (oldSku) {
+    const idx = products.findIndex(x => x.sku === oldSku);
+    if (idx !== -1) {
+      products[idx] = { ...products[idx], sku, name, category: cat, size, color, usage, unit, reorder, stock };
+    }
+  } else {
+    if (products.some(x => x.sku === sku)) {
+      alert("An item with this SKU already exists!");
+      return;
+    }
+    products.push({ sku, name, category: cat, size, color, usage, unit, reorder, stock });
+  }
+
+  saveData();
+  populateFilters();
+  updateStats();
+  renderInventory();
+  renderPeriodReport();
+  closeProductModal();
+  toast("Product item saved successfully");
+}
+
+// --- DELETE ITEM MODAL LOGIC ---
+function promptDeleteProduct(sku) {
+  pendingDeleteSku = sku;
+  const p = products.find(x => x.sku === sku);
+  if (!p) return;
+
+  document.getElementById("delete-modal-sku").innerText = p.sku;
+  document.getElementById("delete-modal-name").innerText = p.name;
+  document.getElementById("delete-modal-sub").innerText = `Category: ${p.category} | Size: ${p.size || 'N/A'} | Color: ${p.color || 'Standard'}`;
+
+  document.getElementById("delete-modal").classList.add("open");
+}
+
+function closeDeleteModal() {
+  pendingDeleteSku = null;
+  document.getElementById("delete-modal").classList.remove("open");
+}
+
+function confirmDeleteProduct() {
+  if (!pendingDeleteSku) return;
+  const sku = pendingDeleteSku;
+  
+  products = products.filter(p => p.sku !== sku);
+  movements = movements.filter(m => m.product !== sku);
+  
+  saveData();
+  populateFilters();
+  updateStats();
+  renderInventory();
+  renderHistory();
+  renderPeriodReport();
+  closeDeleteModal();
+  toast(`Item ${sku} deleted successfully`);
+}
+
+// --- EXPORT & BACKUP FUNCTIONS ---
+function generateSheetHTML(title, headers, rows) {
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m]));
+  return `<h2>${esc(title)}</h2><table border="1"><tr>${headers.map(h => `<th style="background:#0f172a; color:#fff;">${esc(h)}</th>`).join("")}</tr>` +
+    rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("") + `</table><br>`;
+}
+
+function downloadExcel() {
+  const prodRows = products.map(p => [p.sku, p.name, p.category, p.size || "", p.color || "", p.usage || "", p.unit || "", p.stock, p.reorder || 500]);
+  
+  const buildPeriodRows = (p) => {
+    const pm = filterMovesByPeriod(movements, p);
+    const summary = {};
+    products.forEach(prod => summary[prod.sku] = { sku: prod.sku, name: prod.name, size: prod.size, color: prod.color, inQty: 0, outQty: 0 });
+    pm.forEach(m => {
+      if (summary[m.product]) {
+        if (m.type === 'IN') summary[m.product].inQty += Number(m.qty || 0);
+        if (m.type === 'OUT') summary[m.product].outQty += Number(m.qty || 0);
+      }
+    });
+    return Object.values(summary).map(s => [s.sku, s.name, s.size || "", s.color || "", s.inQty, s.outQty, (s.inQty - s.outQty)]);
+  };
+
+  const weekRows = buildPeriodRows('week');
+  const monthRows = buildPeriodRows('month');
+  const yearRows = buildPeriodRows('year');
+  const movRows = movements.map(m => [m.date, m.product, m.type, m.qty, m.ref || "", m.note || ""]);
+
+  const html = `<html><head><meta charset="utf-8"></head><body>` +
+    generateSheetHTML("1. Live Inventory Balance (Products)", ["SKU", "Product Name", "Category", "Size", "Color", "Usage", "Unit", "Current Stock", "Reorder Level"], prodRows) +
+    generateSheetHTML("2. Monthly Stock Report (Current Month)", ["SKU", "Product Name", "Size", "Color", "Stock IN Total", "Stock OUT Total", "Net Change"], monthRows) +
+    generateSheetHTML("3. Weekly Stock Report (Last 7 Days)", ["SKU", "Product Name", "Size", "Color", "Stock IN Total", "Stock OUT Total", "Net Change"], weekRows) +
+    generateSheetHTML("4. Yearly Stock Report (Current Year)", ["SKU", "Product Name", "Size", "Color", "Stock IN Total", "Stock OUT Total", "Net Change"], yearRows) +
+    generateSheetHTML("5. Complete Audit History Log", ["Date & Time", "SKU", "Type", "Quantity", "Invoice / Ref", "Remarks"], movRows) +
+    `<\/body></html>`;
+
+  const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `Dewan_Plast_Stock_Master_Report_${new Date().toISOString().slice(0,10)}.xls`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadPeriodExcel() {
+  const p = selectedPeriod;
+  const pName = p === 'week' ? 'Weekly' : (p === 'month' ? 'Monthly' : (p === 'year' ? 'Yearly' : (p === 'custom' ? 'Custom_Period' : 'All_Time')));
+  
+  const pm = filterMovesByPeriod(movements, p);
+  const summary = {};
+  products.forEach(prod => summary[prod.sku] = { sku: prod.sku, name: prod.name, category: prod.category, size: prod.size, color: prod.color, stock: prod.stock, inQty: 0, outQty: 0 });
+  
+  pm.forEach(m => {
+    if (summary[m.product]) {
+      if (m.type === 'IN') summary[m.product].inQty += Number(m.qty || 0);
+      if (m.type === 'OUT') summary[m.product].outQty += Number(m.qty || 0);
+    }
+  });
+
+  const periodRows = Object.values(summary).map(s => [s.sku, s.name, s.category, s.size || "", s.color || "", s.inQty, s.outQty, (s.inQty - s.outQty), s.stock]);
+  const logRows = pm.map(m => [m.date, m.product, m.type, m.qty, m.ref || "", m.note || ""]);
+
+  const html = `<html><head><meta charset="utf-8"></head><body>` +
+    generateSheetHTML(`Dewan Plast — ${pName} Stock Report`, ["SKU", "Product Name", "Category", "Size", "Color", "Period IN", "Period OUT", "Net Change", "Current Stock"], periodRows) +
+    generateSheetHTML(`${pName} Transaction Audit Log`, ["Date", "SKU", "Type", "Quantity", "Ref", "Note"], logRows) +
+    `<\/body></html>`;
+
+  const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `Dewan_Plast_${pName}_Report_${new Date().toISOString().slice(0,10)}.xls`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify({ products, movements }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Dewan_Plast_Backup.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// Close modals on Escape key or outside click
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    closeStockModal();
+    closeProductModal();
+    closeDeleteModal();
+  }
+});
+
+// Run Init
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("login-form").addEventListener("submit", handleLogin);
+  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    document.getElementById("login-screen").style.display = session ? "none" : "flex";
+    if (session) {
+      await loadCloudData();
+      populateFilters();
+      updateStats();
+      renderInventory();
+      renderHistory();
+      renderPeriodReport();
+    }
+  });
+  init();
+});
+</script>
+</body>
+</html>
