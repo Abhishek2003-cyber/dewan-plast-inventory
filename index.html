@@ -671,6 +671,7 @@ tr:hover td { background: #fafafa; }
               <th>Quantity</th>
               <th>Reference / Invoice</th>
               <th>Remarks / Note</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="history-tbody">
@@ -793,6 +794,11 @@ tr:hover td { background: #fafafa; }
         <div class="form-group">
           <label>Quantity (Bags / Pcs)</label>
           <input type="number" id="sm-qty" class="form-control" placeholder="Enter quantity" min="1" required>
+        </div>
+
+        <div class="form-group">
+          <label>Date & Time</label>
+          <input type="datetime-local" id="sm-date" class="form-control" required>
         </div>
 
         <div class="form-group">
@@ -956,6 +962,7 @@ let products = loadData(STORAGE_PROD_KEY, seedProducts);
 let movements = loadData(STORAGE_MOVE_KEY, seedMoves);
 let selectedPeriod = 'month';
 let pendingDeleteSku = null;
+let editingMovementIndex = null;
 
 async function getCurrentUser() {
   const { data: { user } } = await supabaseClient.auth.getUser();
@@ -1185,11 +1192,12 @@ function renderHistory() {
 
   const tbody = document.getElementById("history-tbody");
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No stock movement records found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;">No stock movement records found.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filtered.slice().reverse().map(m => {
+    const movementIndex = movements.indexOf(m);
     const p = products.find(x => x.sku === m.product);
     const prodDetails = p ? `${p.name} (Size: ${p.size}, Color: ${p.color})` : m.product;
     return `
@@ -1207,6 +1215,10 @@ function renderHistory() {
         <td><b style="font-size:14px;">${fmt(m.qty)}</b></td>
         <td>${m.ref || '—'}</td>
         <td style="color:#64748b;">${m.note || '—'}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-sm btn-outline" onclick="editStockMovement(${movementIndex})">✏️ Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteStockMovement(${movementIndex})">🗑️ Delete</button>
+        </td>
       </tr>
     `;
   }).join("");
@@ -1305,6 +1317,7 @@ function renderPeriodReport() {
 
 // --- STOCK IN / OUT MODAL LOGIC ---
 function openStockModal(type, preselectSku = '') {
+  editingMovementIndex = null;
   document.getElementById("sm-type").value = type;
   const isIN = type === 'IN';
   
@@ -1334,12 +1347,72 @@ function openStockModal(type, preselectSku = '') {
   document.getElementById("sm-qty").value = "";
   document.getElementById("sm-ref").value = "";
   document.getElementById("sm-note").value = "";
+  document.getElementById("sm-date").value = toDateTimeLocal(new Date());
   document.getElementById("quick-calc-result").innerText = "= 0 Pcs";
 
   document.getElementById("stock-modal").classList.add("open");
 }
 
+function toDateTimeLocal(date) {
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function movementDateValue(dateString) {
+  const date = new Date((dateString || '').replace(' ', 'T'));
+  return isNaN(date.getTime()) ? toDateTimeLocal(new Date()) : toDateTimeLocal(date);
+}
+
+function updateProductStock(movement, direction) {
+  const product = products.find(p => p.sku === movement.product);
+  if (!product) return;
+  const amount = Number(movement.qty || 0) * direction;
+  product.stock += movement.type === 'IN' ? amount : -amount;
+}
+
+function editStockMovement(index) {
+  const movement = movements[index];
+  if (!movement) return;
+
+  editingMovementIndex = index;
+  document.getElementById("sm-type").value = movement.type;
+  document.getElementById("stock-modal-title").innerText = `✏️ Edit Stock ${movement.type}`;
+  document.getElementById("stock-modal-header").style.background = movement.type === 'IN' ? '#065f46' : '#9f1239';
+  const submitBtn = document.getElementById("sm-submit-btn");
+  submitBtn.className = movement.type === 'IN' ? 'btn btn-success' : 'btn btn-danger';
+  submitBtn.innerText = 'Update Stock Movement';
+
+  const prodSelect = document.getElementById("sm-product");
+  prodSelect.innerHTML = products.map(p => `
+    <option value="${p.sku}" ${p.sku === movement.product ? 'selected' : ''}>
+      ${p.sku} — ${p.name} [Size: ${p.size || 'N/A'}, Color: ${p.color || 'Standard'}] — Stock: ${fmt(p.stock)} ${p.unit || 'BAG'}
+    </option>
+  `).join('');
+  document.getElementById("sm-qty").value = movement.qty;
+  document.getElementById("sm-ref").value = movement.ref || '';
+  document.getElementById("sm-note").value = movement.note || '';
+  document.getElementById("sm-date").value = movementDateValue(movement.date);
+  document.getElementById("quick-calc-result").innerText = '= 0 Pcs';
+  document.getElementById("stock-modal").classList.add("open");
+}
+
+function deleteStockMovement(index) {
+  const movement = movements[index];
+  if (!movement) return;
+  if (!confirm(`Delete this ${movement.type} movement of ${fmt(movement.qty)} for ${movement.product}?`)) return;
+
+  updateProductStock(movement, -1);
+  movements.splice(index, 1);
+  saveData();
+  updateStats();
+  renderInventory();
+  renderHistory();
+  renderPeriodReport();
+  toast('Stock movement deleted and stock updated');
+}
+
 function closeStockModal() {
+  editingMovementIndex = null;
   document.getElementById("stock-modal").classList.remove("open");
 }
 
@@ -1356,11 +1429,16 @@ function saveStockMovement(e) {
   const qty = Number(document.getElementById("sm-qty").value);
   const ref = document.getElementById("sm-ref").value.trim();
   const note = document.getElementById("sm-note").value.trim();
+  const dateValue = document.getElementById("sm-date").value;
 
   const prod = products.find(p => p.sku === sku);
   if (!prod) return;
 
+  const oldMovement = editingMovementIndex === null ? null : movements[editingMovementIndex];
+  if (oldMovement) updateProductStock(oldMovement, -1);
+
   if (type === 'OUT' && qty > prod.stock) {
+    if (oldMovement) updateProductStock(oldMovement, 1);
     alert(`Cannot dispatch ${fmt(qty)} Pcs! Current stock available is only ${fmt(prod.stock)} Pcs.`);
     return;
   }
@@ -1371,17 +1449,18 @@ function saveStockMovement(e) {
     prod.stock -= qty;
   }
 
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0,10) + " " + now.toTimeString().slice(0,5);
-
-  movements.push({
+  const dateStr = dateValue.replace('T', ' ');
+  const updatedMovement = {
     product: sku,
     type: type,
     qty: qty,
     ref: ref,
     date: dateStr,
     note: note
-  });
+  };
+
+  if (oldMovement) movements[editingMovementIndex] = updatedMovement;
+  else movements.push(updatedMovement);
 
   saveData();
   updateStats();
@@ -1389,7 +1468,7 @@ function saveStockMovement(e) {
   renderHistory();
   renderPeriodReport();
   closeStockModal();
-  toast(`Stock ${type} of ${fmt(qty)} recorded for ${sku}`);
+  toast(oldMovement ? 'Stock movement updated successfully' : `Stock ${type} of ${fmt(qty)} recorded for ${sku}`);
 }
 
 // --- PRODUCT ADD / EDIT MODAL LOGIC ---
