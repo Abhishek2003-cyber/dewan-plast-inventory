@@ -455,41 +455,6 @@ tr:hover td { background: #fafafa; }
 .login-error { min-height: 20px; color: #be123c; font-size: 12px; margin: 8px 0 0; }
 .login-hint { color: var(--text-muted); font-size: 11px; text-align: center; margin-top: 14px; }
 
-.quick-bags {
-  background: #f0f9ff;
-  border: 1px dashed #0284c7;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 16px;
-}
-.quick-bags-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: #0369a1;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-}
-.bag-btns {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.bag-btn {
-  background: #fff;
-  border: 1px solid #bae6fd;
-  color: #0284c7;
-  padding: 5px 9px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.bag-btn:hover {
-  background: #0284c7;
-  color: #fff;
-}
-
 /* Toast alert */
 #toast-box {
   position: fixed;
@@ -774,21 +739,6 @@ tr:hover td { background: #fafafa; }
         <div class="form-group">
           <label>Select Product (Size & Color)</label>
           <select id="sm-product" class="form-control" required></select>
-        </div>
-
-        <!-- Quick 500 Refill Bag Calculator -->
-        <div class="quick-bags">
-          <div class="quick-bags-title">
-            <span>📦 QUICK BAG CALCULATOR (500 Pcs / Bag)</span>
-            <span id="quick-calc-result" style="color:#0284c7; font-weight:800;">= 0 Pcs</span>
-          </div>
-          <div class="bag-btns">
-            <button type="button" class="bag-btn" onclick="applyQuickBags(1)">+1 Bag (500)</button>
-            <button type="button" class="bag-btn" onclick="applyQuickBags(5)">+5 Bags (2.5k)</button>
-            <button type="button" class="bag-btn" onclick="applyQuickBags(10)">+10 Bags (5k)</button>
-            <button type="button" class="bag-btn" onclick="applyQuickBags(20)">+20 Bags (10k)</button>
-            <button type="button" class="bag-btn" onclick="applyQuickBags(50)">+50 Bags (25k)</button>
-          </div>
         </div>
 
         <div class="form-group">
@@ -1348,7 +1298,6 @@ function openStockModal(type, preselectSku = '') {
   document.getElementById("sm-ref").value = "";
   document.getElementById("sm-note").value = "";
   document.getElementById("sm-date").value = toDateTimeLocal(new Date());
-  document.getElementById("quick-calc-result").innerText = "= 0 Pcs";
 
   document.getElementById("stock-modal").classList.add("open");
 }
@@ -1392,7 +1341,6 @@ function editStockMovement(index) {
   document.getElementById("sm-ref").value = movement.ref || '';
   document.getElementById("sm-note").value = movement.note || '';
   document.getElementById("sm-date").value = movementDateValue(movement.date);
-  document.getElementById("quick-calc-result").innerText = '= 0 Pcs';
   document.getElementById("stock-modal").classList.add("open");
 }
 
@@ -1414,12 +1362,6 @@ function deleteStockMovement(index) {
 function closeStockModal() {
   editingMovementIndex = null;
   document.getElementById("stock-modal").classList.remove("open");
-}
-
-function applyQuickBags(bags) {
-  const totalPcs = bags * 500;
-  document.getElementById("sm-qty").value = totalPcs;
-  document.getElementById("quick-calc-result").innerText = `= ${fmt(totalPcs)} Pcs (${bags} Bags)`;
 }
 
 function saveStockMovement(e) {
