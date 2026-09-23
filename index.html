@@ -900,7 +900,18 @@ function loadData(key, fallback) {
   }
 }
 
+function dedupeMovements(records) {
+  const seen = new Set();
+  return records.filter(record => {
+    const key = [record.product, record.type, record.qty, record.ref || '', record.date, record.note || ''].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 async function saveData() {
+  movements = dedupeMovements(movements);
   try {
     localStorage.setItem(STORAGE_PROD_KEY, JSON.stringify(products));
     localStorage.setItem(STORAGE_MOVE_KEY, JSON.stringify(movements));
@@ -945,7 +956,11 @@ async function syncCloudData() {
   const staleIds = (existingProducts || []).filter(row => !products.some(product => product.sku === row.sku)).map(row => row.id);
   if (staleIds.length) await supabaseClient.from('products').delete().in('id', staleIds);
 
-  await supabaseClient.from('stock_movements').delete().eq('user_id', user.id);
+  const { error: deleteMovementsError } = await supabaseClient.from('stock_movements').delete().eq('user_id', user.id);
+  if (deleteMovementsError) {
+    console.warn('Supabase movements cleanup failed. New movements were not inserted.', deleteMovementsError.message);
+    return;
+  }
   if (movements.length) {
     const cloudMovements = movements.map(movement => ({ user_id: user.id, product: movement.product, type: movement.type, qty: Number(movement.qty || 0), ref: movement.ref || null, date: movement.date, note: movement.note || null }));
     const { error: movementsError } = await supabaseClient.from('stock_movements').insert(cloudMovements);
@@ -966,7 +981,7 @@ async function loadCloudData() {
 
   if (cloudProducts.length || cloudMovements.length || (!products.length && !movements.length)) {
     products = cloudProducts.map(product => ({ sku: product.sku, name: product.name, category: product.category, size: product.size, color: product.color, usage: product.usage, unit: product.unit, reorder: product.reorder, stock: product.stock }));
-    movements = cloudMovements.map(movement => ({ product: movement.product, type: movement.type, qty: movement.qty, ref: movement.ref || '', date: movement.date, note: movement.note || '' }));
+    movements = dedupeMovements(cloudMovements.map(movement => ({ product: movement.product, type: movement.type, qty: movement.qty, ref: movement.ref || '', date: movement.date, note: movement.note || '' })));
     saveData();
   } else {
     await syncCloudData();
