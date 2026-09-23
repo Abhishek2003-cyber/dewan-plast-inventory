@@ -924,13 +924,19 @@ let movements = loadData(STORAGE_MOVE_KEY, seedMoves);
 let selectedPeriod = 'month';
 let pendingDeleteSku = null;
 let editingMovementIndex = null;
+let syncQueue = Promise.resolve();
 
 async function getCurrentUser() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   return user;
 }
 
-async function syncCloudData() {
+function syncCloudData() {
+  syncQueue = syncQueue.then(syncCloudDataNow, syncCloudDataNow);
+  return syncQueue;
+}
+
+async function syncCloudDataNow() {
   const user = await getCurrentUser();
   if (!user) return;
 
@@ -982,7 +988,7 @@ async function loadCloudData() {
   if (cloudProducts.length || cloudMovements.length || (!products.length && !movements.length)) {
     products = cloudProducts.map(product => ({ sku: product.sku, name: product.name, category: product.category, size: product.size, color: product.color, usage: product.usage, unit: product.unit, reorder: product.reorder, stock: product.stock }));
     movements = dedupeMovements(cloudMovements.map(movement => ({ product: movement.product, type: movement.type, qty: movement.qty, ref: movement.ref || '', date: movement.date, note: movement.note || '' })));
-    saveData();
+    await saveData();
   } else {
     await syncCloudData();
   }
