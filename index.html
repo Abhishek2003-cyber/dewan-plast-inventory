@@ -527,6 +527,7 @@ tr:hover td { background: #fafafa; }
     <button class="btn btn-danger" onclick="openStockModal('OUT')">📤 - Stock OUT</button>
     <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="openProductModal()">➕ New Item</button>
     <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="downloadExcel()">📊 Download Excel</button>
+    <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="downloadPDF()">📄 Download PDF</button>
     <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="downloadJSON()">💾 Backup</button>
     <button class="btn btn-outline" style="color:#fff; border-color:#334155; background:#1e293b;" onclick="logout()">🚪 Logout</button>
   </div>
@@ -869,6 +870,9 @@ tr:hover td { background: #fafafa; }
 <div id="toast-box"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
 // --- SEED DATA WITH FULL SIZE & COLOR CATALOGUE ---
 const seedProducts = [
@@ -1560,40 +1564,380 @@ function generateSheetHTML(title, headers, rows) {
 }
 
 function downloadExcel() {
-  const prodRows = products.map(p => [p.sku, p.name, p.category, p.size || "", p.color || "", p.usage || "", p.unit || "", p.stock, p.reorder || 500]);
-  
-  const buildPeriodRows = (p) => {
-    const pm = filterMovesByPeriod(movements, p);
-    const summary = {};
-    products.forEach(prod => summary[prod.sku] = { sku: prod.sku, name: prod.name, size: prod.size, color: prod.color, inQty: 0, outQty: 0 });
-    pm.forEach(m => {
-      if (summary[m.product]) {
-        if (m.type === 'IN') summary[m.product].inQty += Number(m.qty || 0);
-        if (m.type === 'OUT') summary[m.product].outQty += Number(m.qty || 0);
-      }
-    });
-    return Object.values(summary).map(s => [s.sku, s.name, s.size || "", s.color || "", s.inQty, s.outQty, (s.inQty - s.outQty)]);
+  if (!window.XLSX) {
+    toast("Excel export is unavailable. Check your internet connection and try again.");
+    return;
+  }
+
+  const border = {
+    top: { style: "thin", color: { rgb: "FFD9D9D9" } },
+    bottom: { style: "thin", color: { rgb: "FFD9D9D9" } },
+    left: { style: "thin", color: { rgb: "FFD9D9D9" } },
+    right: { style: "thin", color: { rgb: "FFD9D9D9" } }
   };
+  const noStockFill = { patternType: "solid", fgColor: { rgb: "FFFCE4D6" } };
+  const lowStockFill = { patternType: "solid", fgColor: { rgb: "FFFFF2CC" } };
+  const styles = {
+    title: { font: { name: "Arial", sz: 13, bold: true } },
+    subtitle: { font: { name: "Arial", sz: 9, italic: true, color: { rgb: "FF595959" } } },
+    category: { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFFFF" } }, fill: { patternType: "solid", fgColor: { rgb: "FF1F3864" } } },
+    product: { font: { name: "Arial", sz: 10, bold: true }, fill: { patternType: "solid", fgColor: { rgb: "FFD9E2F3" } } },
+    header: { font: { name: "Arial", sz: 10, bold: true }, border, alignment: { horizontal: "center" } },
+    transactionHeader: { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFFFF" } }, fill: { patternType: "solid", fgColor: { rgb: "FF1F3864" } }, alignment: { horizontal: "center" } },
+    entry: { font: { name: "Arial", sz: 10, color: { rgb: "FF0000FF" } }, border },
+    entryNumber: { font: { name: "Arial", sz: 10, color: { rgb: "FF0000FF" } }, border, alignment: { horizontal: "right" }, numFmt: "0" },
+    entryDate: { font: { name: "Arial", sz: 10, color: { rgb: "FF0000FF" } }, border, numFmt: "dd-mm-yyyy hh:mm" },
+    formulaNumber: { font: { name: "Arial", sz: 10 }, border, alignment: { horizontal: "right" }, numFmt: "0" },
+    formulaText: { font: { name: "Arial", sz: 10 }, border },
+    totalLabel: { font: { name: "Arial", sz: 10, bold: true }, border: { top: { style: "thin" } } },
+    totalNumber: { font: { name: "Arial", sz: 10, bold: true }, border: { top: { style: "thin" } }, alignment: { horizontal: "right" }, numFmt: "0" },
+    grandLabel: { font: { name: "Arial", sz: 11, bold: true }, border: { top: { style: "medium" }, bottom: { style: "double" } } },
+    grandNumber: { font: { name: "Arial", sz: 11, bold: true }, border: { top: { style: "medium" }, bottom: { style: "double" } }, alignment: { horizontal: "right" }, numFmt: "0" },
+    noteLabel: { font: { name: "Arial", sz: 10, bold: true } },
+    noteText: { font: { name: "Arial", sz: 10 }, alignment: { vertical: "top", wrapText: true } }
+  };
+  const withFill = (style, fill) => fill ? { ...style, fill } : style;
+  const setCell = (sheet, row, column, value, style, formula) => {
+    const address = XLSX.utils.encode_cell({ r: row - 1, c: column });
+    const cell = { v: value, s: style };
+    if (formula) {
+      cell.f = formula;
+      cell.t = typeof value === "number" ? "n" : "str";
+    } else {
+      cell.t = typeof value === "number" ? "n" : "s";
+    }
+    sheet[address] = cell;
+    const range = sheet["!ref"] ? XLSX.utils.decode_range(sheet["!ref"]) : { s: { r: row - 1, c: column }, e: { r: row - 1, c: column } };
+    range.s.r = Math.min(range.s.r, row - 1);
+    range.s.c = Math.min(range.s.c, column);
+    range.e.r = Math.max(range.e.r, row - 1);
+    range.e.c = Math.max(range.e.c, column);
+    sheet["!ref"] = XLSX.utils.encode_range(range);
+  };
+  const setRow = (sheet, row, values, styleForColumn) => {
+    values.forEach((value, column) => {
+      const cell = value && typeof value === "object" && Object.hasOwn(value, "value") ? value : { value };
+      setCell(sheet, row, column, cell.value, styleForColumn(column, cell.value), cell.formula);
+    });
+  };
+  const productLabel = product => {
+    const name = String(product.name || "");
+    const size = String(product.size || "");
+    return size && !name.toLowerCase().includes(size.toLowerCase()) ? `${name} — ${size}` : name;
+  };
+  const periodLabels = { week: "This Week", month: "This Month", year: "This Year", all: "All Time", custom: "Custom Dates" };
+  const periodLabel = periodLabels[selectedPeriod] || "All Time";
+  const now = new Date();
+  const dateLabel = [now.getDate(), now.getMonth() + 1, now.getFullYear()].map((part, index) => index < 2 ? String(part).padStart(2, "0") : part).join("-");
+  const filteredMoves = filterMovesByPeriod(movements, selectedPeriod);
+  const periodTotals = new Map(products.map(product => [product.sku, { inQty: 0, outQty: 0 }]));
+  filteredMoves.forEach(movement => {
+    const total = periodTotals.get(movement.product);
+    if (!total) return;
+    if (movement.type === "IN") total.inQty += Number(movement.qty || 0);
+    if (movement.type === "OUT") total.outQty += Number(movement.qty || 0);
+  });
 
-  const weekRows = buildPeriodRows('week');
-  const monthRows = buildPeriodRows('month');
-  const yearRows = buildPeriodRows('year');
-  const movRows = movements.map(m => [m.date, m.product, m.type, m.qty, m.ref || "", m.note || ""]);
+  const categoryGroups = new Map();
+  products.forEach(product => {
+    const category = String(product.category || "Uncategorized").trim() || "Uncategorized";
+    if (!categoryGroups.has(category)) categoryGroups.set(category, new Map());
+    const productGroups = categoryGroups.get(category);
+    const key = `${product.name || ""}\u0000${product.size || ""}`;
+    if (!productGroups.has(key)) productGroups.set(key, []);
+    productGroups.get(key).push(product);
+  });
 
-  const html = `<html><head><meta charset="utf-8"></head><body>` +
-    generateSheetHTML("1. Live Inventory Balance (Products)", ["SKU", "Product Name", "Category", "Size", "Color", "Usage", "Unit", "Current Stock", "Reorder Level"], prodRows) +
-    generateSheetHTML("2. Monthly Stock Report (Current Month)", ["SKU", "Product Name", "Size", "Color", "Stock IN Total", "Stock OUT Total", "Net Change"], monthRows) +
-    generateSheetHTML("3. Weekly Stock Report (Last 7 Days)", ["SKU", "Product Name", "Size", "Color", "Stock IN Total", "Stock OUT Total", "Net Change"], weekRows) +
-    generateSheetHTML("4. Yearly Stock Report (Current Year)", ["SKU", "Product Name", "Size", "Color", "Stock IN Total", "Stock OUT Total", "Net Change"], yearRows) +
-    generateSheetHTML("5. Complete Audit History Log", ["Date & Time", "SKU", "Type", "Quantity", "Invoice / Ref", "Remarks"], movRows) +
-    `<\/body></html>`;
+  const stockSheet = {};
+  setCell(stockSheet, 1, 0, "Dewan Plast — Stock by Product & Color", styles.title);
+  setCell(stockSheet, 2, 0, `Data up to ${dateLabel}. Blue = entered data, black = formula. Orange row = out of stock, yellow row = low (5 or less). Period: ${periodLabel}.`, styles.subtitle);
+  let row = 4;
+  const subtotalRows = [];
+  let grandIn = 0;
+  let grandOut = 0;
+  let grandStock = 0;
 
-  const blob = new Blob([html], { type: "application/vnd.ms-excel" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `Dewan_Plast_Stock_Master_Report_${new Date().toISOString().slice(0,10)}.xls`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  categoryGroups.forEach((productGroups, category) => {
+    setRow(stockSheet, row++, [category.toUpperCase(), "", "", "", "", "", ""], () => styles.category);
+    productGroups.forEach(group => {
+      setRow(stockSheet, row++, [productLabel(group[0]), "", "", "", "", "", ""], () => styles.product);
+      setRow(stockSheet, row++, ["SKU", "Color", "Period IN", "Period OUT", "Net Change", "Current Stock", "Status"], () => styles.header);
+      const firstProductRow = row;
+      let groupIn = 0;
+      let groupOut = 0;
+      let groupStock = 0;
+
+      group.forEach(product => {
+        const productRow = row++;
+        const totals = periodTotals.get(product.sku) || { inQty: 0, outQty: 0 };
+        const inQty = totals.inQty;
+        const outQty = totals.outQty;
+        const stock = Number(product.stock || 0);
+        const fill = stock === 0 ? noStockFill : stock <= 5 ? lowStockFill : null;
+        const status = stock === 0 ? "Out of stock" : stock <= 5 ? "Low (<=5)" : "OK";
+        setCell(stockSheet, productRow, 0, product.sku || "", withFill(styles.entry, fill));
+        setCell(stockSheet, productRow, 1, product.color || "Default", withFill(styles.entry, fill));
+        setCell(stockSheet, productRow, 2, inQty, withFill(styles.entryNumber, fill));
+        setCell(stockSheet, productRow, 3, outQty, withFill(styles.entryNumber, fill));
+        setCell(stockSheet, productRow, 4, inQty - outQty, withFill(styles.formulaNumber, fill), `C${productRow}-D${productRow}`);
+        setCell(stockSheet, productRow, 5, stock, withFill(styles.entryNumber, fill));
+        setCell(stockSheet, productRow, 6, status, withFill(styles.formulaText, fill), `IF(F${productRow}=0,"Out of stock",IF(F${productRow}<=5,"Low (<=5)","OK"))`);
+        groupIn += inQty;
+        groupOut += outQty;
+        groupStock += stock;
+      });
+
+      const lastProductRow = row - 1;
+      const subtotalRow = row++;
+      subtotalRows.push(subtotalRow);
+      setCell(stockSheet, subtotalRow, 0, "", styles.totalLabel);
+      setCell(stockSheet, subtotalRow, 1, "Total", styles.totalLabel);
+      setCell(stockSheet, subtotalRow, 2, groupIn, styles.totalNumber, `SUM(C${firstProductRow}:C${lastProductRow})`);
+      setCell(stockSheet, subtotalRow, 3, groupOut, styles.totalNumber, `SUM(D${firstProductRow}:D${lastProductRow})`);
+      setCell(stockSheet, subtotalRow, 4, groupIn - groupOut, styles.totalNumber, `SUM(E${firstProductRow}:E${lastProductRow})`);
+      setCell(stockSheet, subtotalRow, 5, groupStock, styles.totalNumber, `SUM(F${firstProductRow}:F${lastProductRow})`);
+      setCell(stockSheet, subtotalRow, 6, "", styles.totalLabel);
+      grandIn += groupIn;
+      grandOut += groupOut;
+      grandStock += groupStock;
+      row++;
+    });
+  });
+
+  const grandRow = row;
+  setCell(stockSheet, grandRow, 0, "GRAND TOTAL", styles.grandLabel);
+  setCell(stockSheet, grandRow, 1, "", styles.grandLabel);
+  [grandIn, grandOut, grandIn - grandOut, grandStock].forEach((value, index) => {
+    const column = index + 2;
+    const formula = subtotalRows.length ? `SUM(${subtotalRows.map(subtotalRow => `${XLSX.utils.encode_col(column)}${subtotalRow}`).join(",")})` : null;
+    setCell(stockSheet, grandRow, column, value, styles.grandNumber, formula);
+  });
+  setCell(stockSheet, grandRow, 6, "", styles.grandLabel);
+  stockSheet["!cols"] = [{ wch: 10 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 }];
+
+  const transactionSheet = {};
+  setRow(transactionSheet, 1, ["Date & Time", "SKU", "Product", "Color", "Type", "Quantity", "Ref", "Flag"], () => styles.transactionHeader);
+  const excelSerial = value => {
+    const date = new Date(String(value || "").replace(" ", "T"));
+    if (Number.isNaN(date.getTime())) return String(value || "");
+    return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()) - Date.UTC(1899, 11, 30)) / 86400000;
+  };
+  const sortedMovements = movements.slice().sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
+  sortedMovements.forEach((movement, index) => {
+    const product = products.find(item => item.sku === movement.product);
+    const date = excelSerial(movement.date);
+    const values = [
+      typeof date === "number" ? { value: date } : { value: date },
+      movement.product || "",
+      product ? productLabel(product) : movement.product || "",
+      product ? product.color || "Default" : "",
+      movement.type || "",
+      Number(movement.qty || 0),
+      movement.ref || "",
+      movement.note || ""
+    ];
+    setRow(transactionSheet, index + 2, values, column => column === 0 ? styles.entryDate : column === 5 ? styles.entryNumber : styles.entry);
+  });
+  transactionSheet["!cols"] = [{ wch: 18 }, { wch: 8 }, { wch: 40 }, { wch: 16 }, { wch: 7 }, { wch: 10 }, { wch: 10 }, { wch: 60 }];
+
+  const notesSheet = {};
+  const notes = [
+    ["Layout", "Products are grouped by category and product/size; colors are listed as rows within each block, followed by a block total."],
+    ["Period", `Period IN/OUT totals use the ${periodLabel} filter selected when this workbook was generated.`],
+    ["Status", "Orange row = out of stock. Yellow row = current stock of 5 or less."],
+    ["Transactions", "All recorded stock movements are listed in date order."],
+    ["Generated", dateLabel]
+  ];
+  notes.forEach((note, index) => {
+    setCell(notesSheet, index + 1, 0, note[0], styles.noteLabel);
+    setCell(notesSheet, index + 1, 1, note[1], styles.noteText);
+  });
+  notesSheet["!cols"] = [{ wch: 20 }, { wch: 110 }];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, stockSheet, "Stock by Product");
+  XLSX.utils.book_append_sheet(workbook, transactionSheet, "Transactions");
+  XLSX.utils.book_append_sheet(workbook, notesSheet, "Notes");
+  try {
+    const fileContents = XLSX.write(workbook, { bookType: "xlsx", type: "array", cellStyles: true });
+    const blob = new Blob([fileContents], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Dewan_Plast_Stock_By_Product.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) {
+    console.error("Excel export failed:", error);
+    toast("Excel download failed. Please try again.");
+  }
+}
+
+function downloadPDF() {
+  if (!window.jspdf || typeof window.jspdf.jsPDF !== "function") {
+    toast("PDF export is unavailable. Check your internet connection and try again.");
+    return;
+  }
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    if (typeof doc.autoTable !== "function") {
+      toast("PDF table export is unavailable. Refresh the page and try again.");
+      return;
+    }
+
+    const periodLabels = { week: "This Week", month: "This Month", year: "This Year", all: "All Time", custom: "Custom Dates" };
+    const periodLabel = periodLabels[selectedPeriod] || "All Time";
+    const now = new Date();
+    const dateLabel = [now.getDate(), now.getMonth() + 1, now.getFullYear()].map((part, index) => index < 2 ? String(part).padStart(2, "0") : part).join("-");
+    const productLabel = product => {
+      const name = String(product.name || "");
+      const size = String(product.size || "");
+      return size && !name.toLowerCase().includes(size.toLowerCase()) ? `${name} — ${size}` : name;
+    };
+    const filteredMoves = filterMovesByPeriod(movements, selectedPeriod);
+    const periodTotals = new Map(products.map(product => [product.sku, { inQty: 0, outQty: 0 }]));
+    filteredMoves.forEach(movement => {
+      const total = periodTotals.get(movement.product);
+      if (!total) return;
+      if (movement.type === "IN") total.inQty += Number(movement.qty || 0);
+      if (movement.type === "OUT") total.outQty += Number(movement.qty || 0);
+    });
+
+    const categoryGroups = new Map();
+    products.forEach(product => {
+      const category = String(product.category || "Uncategorized").trim() || "Uncategorized";
+      if (!categoryGroups.has(category)) categoryGroups.set(category, new Map());
+      const productGroups = categoryGroups.get(category);
+      const key = `${product.name || ""}\u0000${product.size || ""}`;
+      if (!productGroups.has(key)) productGroups.set(key, []);
+      productGroups.get(key).push(product);
+    });
+
+    const stockRows = [];
+    const bandRow = (content, style) => Array.from({ length: 7 }, (_, index) => ({ content: index === 0 ? content : "", styles: style }));
+    categoryGroups.forEach((productGroups, category) => {
+      stockRows.push(bandRow(category.toUpperCase(), { fillColor: [31, 56, 100], textColor: [255, 255, 255], fontStyle: "bold" }));
+      productGroups.forEach(group => {
+        stockRows.push(bandRow(productLabel(group[0]), { fillColor: [217, 226, 243], fontStyle: "bold" }));
+        let groupIn = 0;
+        let groupOut = 0;
+        let groupStock = 0;
+        group.forEach(product => {
+          const totals = periodTotals.get(product.sku) || { inQty: 0, outQty: 0 };
+          const inQty = totals.inQty;
+          const outQty = totals.outQty;
+          const stock = Number(product.stock || 0);
+          const status = stock === 0 ? "Out of stock" : stock <= 5 ? "Low (<=5)" : "OK";
+          const fillColor = stock === 0 ? [252, 228, 214] : stock <= 5 ? [255, 242, 204] : [255, 255, 255];
+          const entered = { textColor: [0, 0, 255], fillColor };
+          const calculated = { textColor: [0, 0, 0], fillColor };
+          stockRows.push([
+            { content: product.sku || "", styles: entered },
+            { content: product.color || "Default", styles: entered },
+            { content: String(inQty), styles: { ...entered, halign: "right" } },
+            { content: String(outQty), styles: { ...entered, halign: "right" } },
+            { content: String(inQty - outQty), styles: { ...calculated, halign: "right" } },
+            { content: String(stock), styles: { ...entered, halign: "right" } },
+            { content: status, styles: calculated }
+          ]);
+          groupIn += inQty;
+          groupOut += outQty;
+          groupStock += stock;
+        });
+        stockRows.push([
+          { content: "", styles: { fontStyle: "bold", lineWidth: { top: 0.4 } } },
+          { content: "Total", styles: { fontStyle: "bold", lineWidth: { top: 0.4 } } },
+          { content: String(groupIn), styles: { fontStyle: "bold", halign: "right", lineWidth: { top: 0.4 } } },
+          { content: String(groupOut), styles: { fontStyle: "bold", halign: "right", lineWidth: { top: 0.4 } } },
+          { content: String(groupIn - groupOut), styles: { fontStyle: "bold", halign: "right", lineWidth: { top: 0.4 } } },
+          { content: String(groupStock), styles: { fontStyle: "bold", halign: "right", lineWidth: { top: 0.4 } } },
+          { content: "", styles: { fontStyle: "bold", lineWidth: { top: 0.4 } } }
+        ]);
+      });
+    });
+
+    const drawPageHeader = (title, subtitle) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(title, 10, 11);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text(subtitle, 10, 17);
+    };
+
+    doc.autoTable({
+      startY: 23,
+      head: [["SKU", "Color", "Period IN", "Period OUT", "Net Change", "Current Stock", "Status"]],
+      body: stockRows,
+      theme: "grid",
+      tableWidth: "auto",
+      margin: { left: 10, right: 10, bottom: 14 },
+      styles: { font: "helvetica", fontSize: 7, cellPadding: 1.5, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak" },
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: "bold", halign: "center" },
+      didDrawPage: () => drawPageHeader("Dewan Plast — Stock by Product & Color", `Data up to ${dateLabel} | Period: ${periodLabel} | Orange: out of stock | Yellow: stock 5 or less`)
+    });
+
+    doc.addPage("a4", "landscape");
+    const sortedMovements = movements.slice().sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
+    const transactionRows = sortedMovements.map(movement => {
+      const product = products.find(item => item.sku === movement.product);
+      return [movement.date || "", movement.product || "", product ? productLabel(product) : movement.product || "", product ? product.color || "Default" : "", movement.type || "", String(Number(movement.qty || 0)), movement.ref || "", movement.note || ""];
+    });
+    doc.autoTable({
+      startY: 23,
+      head: [["Date & Time", "SKU", "Product", "Color", "Type", "Quantity", "Ref", "Flag"]],
+      body: transactionRows,
+      theme: "grid",
+      tableWidth: "auto",
+      margin: { left: 10, right: 10, bottom: 14 },
+      styles: { font: "helvetica", fontSize: 6.5, cellPadding: 1.5, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak" },
+      headStyles: { fillColor: [31, 56, 100], textColor: [255, 255, 255], fontStyle: "bold" },
+      didDrawPage: () => drawPageHeader("Dewan Plast — Transactions", `All stock movements through ${dateLabel}`)
+    });
+
+    doc.addPage("a4", "portrait");
+    const notes = [
+      ["Layout", "Products are grouped by category and product/size; colors are listed inside each block, followed by a block total."],
+      ["Period", `Stock IN/OUT totals use the ${periodLabel} filter selected when this report was generated.`],
+      ["Status", "Orange row = out of stock. Yellow row = current stock of 5 or less."],
+      ["Transactions", "All recorded stock movements are listed in date order."],
+      ["Generated", dateLabel]
+    ];
+    doc.autoTable({
+      startY: 23,
+      body: notes,
+      theme: "grid",
+      tableWidth: "auto",
+      margin: { left: 12, right: 12, bottom: 14 },
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 3, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak" },
+      didDrawPage: () => drawPageHeader("Dewan Plast — Notes", `Export generated ${dateLabel}`)
+    });
+
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+      doc.setPage(pageNumber);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text(`Page ${pageNumber} of ${pageCount}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 5, { align: "right" });
+    }
+
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Dewan_Plast_Stock_By_Product.pdf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) {
+    console.error("PDF export failed:", error);
+    toast("PDF download failed. Please try again.");
+  }
 }
 
 function downloadPeriodExcel() {
