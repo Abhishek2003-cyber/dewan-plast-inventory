@@ -1874,9 +1874,18 @@ function downloadPDF() {
       head: [["SKU", "Color", "Period IN", "Period OUT", "Net Change", "Current Stock", "Status"]],
       body: stockRows,
       theme: "grid",
-      tableWidth: "auto",
+      tableWidth: 277,
       margin: { left: 10, right: 10, bottom: 14 },
-      styles: { font: "helvetica", fontSize: 7, cellPadding: 1.5, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak" },
+      styles: { font: "helvetica", fontSize: 7, cellPadding: 1.5, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak", valign: "middle" },
+      columnStyles: {
+        0: { cellWidth: 46 },
+        1: { cellWidth: 46 },
+        2: { cellWidth: 32, halign: "right" },
+        3: { cellWidth: 32, halign: "right" },
+        4: { cellWidth: 35, halign: "right" },
+        5: { cellWidth: 50, halign: "right" },
+        6: { cellWidth: 36 }
+      },
       headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: "bold", halign: "center" },
       didDrawPage: () => drawPageHeader("Dewan Plast — Stock by Product & Color", `Data up to ${dateLabel} | Period: ${periodLabel} | Orange: out of stock | Yellow: stock 5 or less`)
     });
@@ -1892,9 +1901,19 @@ function downloadPDF() {
       head: [["Date & Time", "SKU", "Product", "Color", "Type", "Quantity", "Ref", "Flag"]],
       body: transactionRows,
       theme: "grid",
-      tableWidth: "auto",
+      tableWidth: 277,
       margin: { left: 10, right: 10, bottom: 14 },
-      styles: { font: "helvetica", fontSize: 6.5, cellPadding: 1.5, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak" },
+      styles: { font: "helvetica", fontSize: 6.5, cellPadding: 1.5, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak", valign: "middle" },
+      columnStyles: {
+        0: { cellWidth: 31 },
+        1: { cellWidth: 27 },
+        2: { cellWidth: 51 },
+        3: { cellWidth: 31 },
+        4: { cellWidth: 20, halign: "center" },
+        5: { cellWidth: 23, halign: "right" },
+        6: { cellWidth: 29 },
+        7: { cellWidth: 65 }
+      },
       headStyles: { fillColor: [31, 56, 100], textColor: [255, 255, 255], fontStyle: "bold" },
       didDrawPage: () => drawPageHeader("Dewan Plast — Transactions", `All stock movements through ${dateLabel}`)
     });
@@ -1911,9 +1930,13 @@ function downloadPDF() {
       startY: 23,
       body: notes,
       theme: "grid",
-      tableWidth: "auto",
+      tableWidth: 186,
       margin: { left: 12, right: 12, bottom: 14 },
-      styles: { font: "helvetica", fontSize: 9, cellPadding: 3, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak" },
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 3, lineColor: [217, 217, 217], lineWidth: 0.1, overflow: "linebreak", valign: "middle" },
+      columnStyles: {
+        0: { cellWidth: 34 },
+        1: { cellWidth: 152 }
+      },
       didDrawPage: () => drawPageHeader("Dewan Plast — Notes", `Export generated ${dateLabel}`)
     });
 
