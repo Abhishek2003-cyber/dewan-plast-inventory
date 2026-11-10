@@ -652,9 +652,9 @@ tr:hover td { background: #fafafa; }
   <section id="view-period" style="display: none;">
     <div class="toolbar">
       <div class="period-pills">
-        <button class="pill-btn" id="period-btn-week" onclick="setPeriod('week')">📅 This Week (Is Hafe)</button>
-        <button class="pill-btn active" id="period-btn-month" onclick="setPeriod('month')">📅 This Month (Is Mahine)</button>
-        <button class="pill-btn" id="period-btn-year" onclick="setPeriod('year')">📅 This Year (Is Saal)</button>
+        <button class="pill-btn" id="period-btn-week" onclick="setPeriod('week')">📅 This Week</button>
+        <button class="pill-btn active" id="period-btn-month" onclick="setPeriod('month')">📅 This Month</button>
+        <button class="pill-btn" id="period-btn-year" onclick="setPeriod('year')">📅 This Year</button>
         <button class="pill-btn" id="period-btn-all" onclick="setPeriod('all')">📅 All Time</button>
         <button class="pill-btn" id="period-btn-custom" onclick="setPeriod('custom')">⚙️ Custom Dates</button>
       </div>
@@ -1022,11 +1022,11 @@ async function handleLogin(e) {
 
   console.error("Supabase login error:", loginError);
   if (loginError.message === "Invalid login credentials") {
-    error.textContent = "Email ya password galat hai, ya user Supabase me create nahi hai.";
+    error.textContent = "Invalid email or password, or this user does not exist in Supabase.";
   } else if (loginError.message.toLowerCase().includes("email not confirmed")) {
-    error.textContent = "Supabase email confirmation complete karein, phir login karein.";
+    error.textContent = "Please confirm your email before logging in.";
   } else {
-    error.textContent = loginError.message || "Login nahi ho saka.";
+    error.textContent = loginError.message || "Login failed.";
   }
 }
 
@@ -1301,12 +1301,12 @@ function openStockModal(type, preselectSku = '') {
   const submitBtn = document.getElementById("sm-submit-btn");
 
   if (isIN) {
-    title.innerText = "📥 Record Stock IN (Maal Aaya)";
+    title.innerText = "📥 Record Stock IN (Received)";
     header.style.background = "#065f46";
     submitBtn.className = "btn btn-success";
     submitBtn.innerText = "Save Stock IN";
   } else {
-    title.innerText = "📤 Record Stock OUT (Maal Bheja)";
+    title.innerText = "📤 Record Stock OUT (Dispatched)";
     header.style.background = "#9f1239";
     submitBtn.className = "btn btn-danger";
     submitBtn.innerText = "Save Stock OUT";
